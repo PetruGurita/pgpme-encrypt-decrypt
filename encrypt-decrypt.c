@@ -17,7 +17,6 @@ int main(int argc, char **argv) {
   gpgme_user_id_t user;
   gpgme_data_t plain_text;
   gpgme_data_t encrypted_text;
-  gpgme_data_t encrypted_text2;
   gpgme_encrypt_result_t encryption_result;
   gpgme_key_t recipients[2] = {NULL, NULL};
   char* buffer_encryption = NULL;
@@ -170,7 +169,8 @@ int main(int argc, char **argv) {
   /* THE LINE CAUSING SEG FAULT */
   /* it has something to do with the  gpgme_data_read function*/
 
-  error = gpgme_data_new_from_mem(encrypted_text, encrypted_text_size, 1);
+  error = gpgme_data_new_from_mem(&encrypted_text, buffer_encryption,
+                                  encrypted_text_size, 1);
 
 
     // if(error)
