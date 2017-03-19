@@ -140,17 +140,18 @@ int main(int argc, char **argv) {
         exit (1);
     }
 
-    encrypted_text_size = gpgme_data_seek (encrypted_text, 0, SEEK_SET);
+    encrypted_text_size = gpgme_data_seek (encrypted_text, 0, SEEK_END);
     if (encrypted_text_size == -1)
     {
       fprintf (stderr, "Error in data seek at encryption");
       exit (1);
     }
-    buffer_encryption = (char *) malloc(encrypted_text_size);
-
+    gpgme_data_seek (encrypted_text, 0, SEEK_SET);
+    buffer_encryption = (char *) malloc(encrypted_text_size + 100);
 
     encrypted_text_size = gpgme_data_read(encrypted_text, buffer_encryption,
                                           MAXLEN);
+
     if (encrypted_text_size == -1)
     {
       fprintf (stderr, "Error in data read at encryption");
@@ -160,56 +161,56 @@ int main(int argc, char **argv) {
     printf("Encrypted text (%i bytes):\n", (int)encrypted_text_size);
     printf("%s\n", buffer_encryption);
 
-    //gpgme_data_release (plain_text);
-    //gpgme_data_release (encrypted_text);
-
-
+    gpgme_data_release (plain_text);
+    gpgme_data_release (encrypted_text);
     /* Decrypt */
 
-  /* THE LINE CAUSING SEG FAULT */
-  /* it has something to do with the  gpgme_data_read function*/
 
   error = gpgme_data_new_from_mem(&encrypted_text, buffer_encryption,
                                   encrypted_text_size, 1);
 
+    if(error)
+    {
+      fprintf (stderr, "%s: data_from_mem failed for decryption: \
+      %s : %s\n",
+             argv[0], gpgme_strsource (error), gpgme_strerror (error));
+      exit (1);
+    }
 
-    // if(error)
-    // {
-    //   fprintf (stderr, "%s: data_from_mem failed for decryption: \
-    //   %s : %s\n",
-    //          argv[0], gpgme_strsource (error), gpgme_strerror (error));
-    //   exit (1);
-    // }
-    //
-    // error = gpgme_data_new(&encrypted_text);
-    // if(error)
-    // {
-    //   fprintf (stderr, "%s: gpgme_data_new failed for decryption%s : %s\n",
-    //          argv[0], gpgme_strsource (error), gpgme_strerror (error));
-    //   exit (1);
-    // }
-    //
-    // error = gpgme_op_decrypt (context, encrypted_text, plain_text);
-    // if(error)
-    // {
-    //   fprintf (stderr, "%s: op_decrypt failed %s : %s\n",
-    //            argv[0], gpgme_strsource (error), gpgme_strerror (error));
-    //   exit (1);
-    // }
-    //
-    // plain_text_size = gpgme_data_seek (plain_text, 0, SEEK_SET);
-    // if (plain_text_size == -1)
-    // {
-    //   fprintf (stderr, "Error in data seek at decryption ");
-    //   exit (1);
-    // }
-    //
-    // encrypted_text_size = gpgme_data_read(encrypted_text, buffer_encryption, MAXLEN);
-    // if (encrypted_text_size == -1)
-    // {
-    //   fprintf (stderr, "Error in data read at decryption");
-    //   exit (1);
-    // }
+    error = gpgme_data_new(&plain_text);
+    if(error)
+    {
+      fprintf (stderr, "%s: gpgme_data_new failed for decryption%s : %s\n",
+             argv[0], gpgme_strsource (error), gpgme_strerror (error));
+      exit (1);
+    }
 
+    error = gpgme_op_decrypt (context, encrypted_text, plain_text);
+    if(error)
+    {
+      fprintf (stderr, "%s: op_decrypt failed %s : %s\n",
+               argv[0], gpgme_strsource (error), gpgme_strerror (error));
+      exit (1);
+    }
+
+    plain_text_size = gpgme_data_seek (plain_text, 0, SEEK_END);
+    if (plain_text_size == -1)
+    {
+      fprintf (stderr, "Error in data seek at decryption ");
+      exit (1);
+    }
+    gpgme_data_seek (plain_text, 0, SEEK_SET);
+    buffer_decryption = (char *) malloc(plain_text_size + 100);
+
+    plain_text_size = gpgme_data_read(plain_text, buffer_decryption,
+                                          MAXLEN);
+    if (plain_text_size == -1)
+    {
+      fprintf (stderr, "Error in data read at decryption");
+      exit (1);
+    }
+    printf("Decrypted text (%i bytes):\n", (int)plain_text_size);
+    printf("%s\n", buffer_decryption);
+    
     return 0;
 }
